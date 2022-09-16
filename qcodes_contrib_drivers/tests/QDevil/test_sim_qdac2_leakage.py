@@ -63,8 +63,7 @@ def test_arrangement_leakage(qdac, mocker):  # noqa
     for gate, current_A in currents.items():
         qdac.channel(gates[gate]).read_current_A = MagicMock(return_value=current_A)
     arrangement = qdac.arrange(gates)
-    arrangement.set_virtual_voltage('sensor1', 0.3)
-    arrangement.set_virtual_voltage('plunger3', 0.4)
+    arrangement.set_virtual_voltages({'sensor1': 0.3, 'plunger3': 0.4})
     qdac.start_recording_scpi()
     # -----------------------------------------------------------------------
     leakage_matrix = arrangement.leakage(modulation_V=0.005, nplc=2)
@@ -79,28 +78,52 @@ def test_arrangement_leakage(qdac, mocker):  # noqa
         # First modulation
         'sour1:volt:mode fix',
         'sour1:volt 0.305',
+        'sour2:volt:mode fix',
+        'sour2:volt 0.0',
+        'sour3:volt:mode fix',
+        'sour3:volt 0.4',
         # (Sleep NPLC / line_freq)
         'sens:rang low,(@1,2,3)',
         'sens:nplc 2,(@1,2,3)',
         'read? (@1,2,3)',
         'sour1:volt:mode fix',
         'sour1:volt 0.3',
+        'sour2:volt:mode fix',
+        'sour2:volt 0.0',
+        'sour3:volt:mode fix',
+        'sour3:volt 0.4',
         # Second modulation
+        'sour1:volt:mode fix',
+        'sour1:volt 0.3',
         'sour2:volt:mode fix',
         'sour2:volt 0.005',
+        'sour3:volt:mode fix',
+        'sour3:volt 0.4',
         # (Sleep NPLC / line_freq)
         'sens:rang low,(@1,2,3)',
         'sens:nplc 2,(@1,2,3)',
         'read? (@1,2,3)',
+        'sour1:volt:mode fix',
+        'sour1:volt 0.3',
         'sour2:volt:mode fix',
         'sour2:volt 0.0',
+        'sour3:volt:mode fix',
+        'sour3:volt 0.4',
         # Third modulation
+        'sour1:volt:mode fix',
+        'sour1:volt 0.3',
+        'sour2:volt:mode fix',
+        'sour2:volt 0.0',
         'sour3:volt:mode fix',
         'sour3:volt 0.405',
         # (Sleep NPLC / line_freq)
         'sens:rang low,(@1,2,3)',
         'sens:nplc 2,(@1,2,3)',
         'read? (@1,2,3)',
+        'sour1:volt:mode fix',
+        'sour1:volt 0.3',
+        'sour2:volt:mode fix',
+        'sour2:volt 0.0',
         'sour3:volt:mode fix',
         'sour3:volt 0.4',
     ]

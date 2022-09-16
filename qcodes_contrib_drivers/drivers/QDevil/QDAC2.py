@@ -9,7 +9,7 @@ from qcodes.utils import validators
 from typing import Any, NewType, Sequence, List, Dict, Tuple, Optional
 from packaging.version import parse
 
-# Version 0.20.0
+# Version 0.21.0
 #
 # Guiding principles for this driver for QDevil QDAC-II
 # -----------------------------------------------------
@@ -1710,11 +1710,31 @@ class Arrangement_Context:
             raise ValueError(f'No gate named "{gate}"')
         self._effectuate_virtual_voltage(index, voltage)
 
+    def set_virtual_voltages(self, gates_to_voltages: Dict[str, float]) -> None:
+        """Set virtual voltages on specific gates in one go
+
+        The actual voltage that each gate will receive depends on the
+        correction matrix.
+
+        Args:
+            gate_to_voltages (Dict[str,float]): gate to voltage map
+        """
+        for gate, voltage in gates_to_voltages.items():
+            try:
+                index = self._gate_index(gate)
+            except KeyError:
+                raise ValueError(f'No gate named "{gate}"')
+            self._virtual_voltages[index] = voltage
+        self._effectuate_virtual_voltages()
+
     def _effectuate_virtual_voltage(self, index: int, voltage: float) -> None:
         self._virtual_voltages[index] = voltage
-        actual_V = self.actual_voltages()[index]
-        channel_number = self._channels[index]
-        self._qdac.channel(channel_number).dc_constant_V(actual_V)
+        self._effectuate_virtual_voltages()
+
+    def _effectuate_virtual_voltages(self) -> None:
+        for index, channel_number in enumerate(self._channels):
+            actual_V = self.actual_voltages()[index]
+            self._qdac.channel(channel_number).dc_constant_V(actual_V)
 
     def add_correction(self, gate: str, factors: Sequence[float]) -> None:
         """Update how much a particular gate influences the other gates
