@@ -69,7 +69,6 @@ def test_measurement_trigger_on_internal(qdac):  # noqa
     assert qdac.get_recorded_scpi_commands() == [
         f'sens2:trig:sour int{trigger.value}',
         f'sens2:init:cont on',
-        'sens2:init'
     ]
 
 
@@ -96,7 +95,6 @@ def test_measurement_trigger_on_external(qdac):  # noqa
     assert qdac.get_recorded_scpi_commands() == [
         f'sens2:trig:sour ext{trigger}',
         f'sens2:init:cont on',
-        'sens2:init'
     ]
 
 

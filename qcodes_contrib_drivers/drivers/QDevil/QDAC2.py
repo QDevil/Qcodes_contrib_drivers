@@ -348,7 +348,6 @@ class _Dc_Context(_Channel_Context):
 
     def _make_ready_to_start(self) -> None:
         self._write_channel('sour{0}:dc:init:cont on')
-        self._write_channel('sour{0}:dc:init')
 
     def _switch_to_immediate_trigger(self) -> None:
         self._write_channel('sour{0}:dc:init:cont off')
@@ -589,7 +588,6 @@ class _Waveform_Context(_Channel_Context):
 
     def _make_ready_to_start(self, wave_kind: str) -> None:
         self._write_channel(f'sour{"{0}"}:{wave_kind}:init:cont on')
-        self._write_channel(f'sour{"{0}"}:{wave_kind}:init')
 
     def _switch_to_immediate_trigger(self, wave_kind: str):
         self._write_channel(f'sour{"{0}"}:{wave_kind}:init:cont off')
@@ -1105,7 +1103,6 @@ class Measurement_Context(_Channel_Context):
         internal = _trigger_context_to_value(trigger)
         self._write_channel(f'sens{"{0}"}:trig:sour int{internal}')
         self._write_channel(f'sens{"{0}"}:init:cont on')
-        self._write_channel(f'sens{"{0}"}:init')
 
     def start_on_external(self, trigger: ExternalInput) -> None:
         """Attach external trigger to start the current measurement
@@ -1115,7 +1112,6 @@ class Measurement_Context(_Channel_Context):
         """
         self._write_channel(f'sens{"{0}"}:trig:sour ext{trigger}')
         self._write_channel(f'sens{"{0}"}:init:cont on')
-        self._write_channel(f'sens{"{0}"}:init')
 
     def abort(self) -> None:
         """Abort current measurement

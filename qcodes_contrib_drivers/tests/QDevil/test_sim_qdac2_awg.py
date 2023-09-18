@@ -91,7 +91,6 @@ def test_awg_default_values(qdac):  # noqa
         'sour5:awg:coun 1',
         'sour5:awg:trig:sour bus',
         'sour5:awg:init:cont on',
-        'sour5:awg:init',
     ]
 
 
@@ -117,7 +116,6 @@ def test_awg_parameters(qdac):  # noqa
         'sour5:awg:coun 10',
         'sour5:awg:trig:sour bus',
         'sour5:awg:init:cont on',
-        'sour5:awg:init',
     ]
 
 
@@ -224,7 +222,6 @@ def test_awg_start_trigger_fires(qdac):  # noqa
     # -----------------------------------------------------------------------
     assert qdac.get_recorded_scpi_commands() == [
         'sour5:awg:init:cont on',
-        'sour5:awg:init',
         f'tint {trigger.value}'
     ]
 
@@ -296,7 +293,6 @@ def test_awg_trigger_on_internal(qdac):  # noqa
     assert qdac.get_recorded_scpi_commands() == [
         f'sour5:awg:trig:sour int{trigger.value}',
         f'sour5:awg:init:cont on',
-        'sour5:awg:init'
     ]
 
 
@@ -311,5 +307,4 @@ def test_awg_trigger_on_external(qdac):  # noqa
     assert qdac.get_recorded_scpi_commands() == [
         f'sour5:awg:trig:sour ext{trigger}',
         f'sour5:awg:init:cont on',
-        'sour5:awg:init'
     ]
