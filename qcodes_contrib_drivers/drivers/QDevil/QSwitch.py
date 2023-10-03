@@ -5,7 +5,7 @@ from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.visa import VisaInstrument
 from pyvisa.errors import VisaIOError
 from qcodes.utils import validators
-from typing import NewType, Tuple, Sequence, List, Dict, Optional
+from typing import Tuple, Sequence, List, Dict, Optional, Set
 from packaging.version import Version, parse
 # import abc
 
@@ -22,6 +22,9 @@ from packaging.version import Version, parse
 #
 
 
+State = Sequence[Tuple[int, int]]
+
+
 def _line_tap_split(input: str) -> Tuple[int, int]:
     pair = input.split('!')
     if len(pair) != 2:
@@ -33,11 +36,11 @@ def _line_tap_split(input: str) -> Tuple[int, int]:
     return int(pair[0]), int(pair[1])
 
 
-def channel_list_to_map(channel_list: str) -> Sequence[Tuple[int, int]]:
+def channel_list_to_state(channel_list: str) -> State:
     outer = re.match(r'\(@([0-9,:! ]*)\)', channel_list)
     if not outer:
         raise ValueError(f'Expected channel list, got {channel_list}')
-    result = []
+    result : List[Tuple[int, int]] = []
     sequences = outer[1].split(',')
     if sequences == ['']:
         return result
@@ -58,11 +61,62 @@ def channel_list_to_map(channel_list: str) -> Sequence[Tuple[int, int]]:
     return result
 
 
-def map_to_channel_list(channel_map: Dict[int, int]) -> str:
+def state_to_expanded_list(state: State) -> str:
     return \
         '(@' + \
-        ','.join([f'{line}!{tap}' for (line,tap) in channel_map]) + \
+        ','.join([f'{line}!{tap}' for (line,tap) in state]) + \
         ')'
+
+
+def state_to_compressed_list(state: State) -> str:
+    tap_to_line: Dict[int, Set[int]] = dict()
+    for line, tap in state:
+        tap_to_line.setdefault(tap, set()).add(line)
+    taps = list(tap_to_line.keys())
+    taps.sort()
+    intervals = []
+    for tap in taps:
+        start_line = None
+        end_line = None
+        lines = list(tap_to_line[tap])
+        lines.sort()
+        for line in lines:
+            if not start_line:
+                start_line = line
+                end_line = line
+                continue
+            if line == end_line + 1:
+                end_line = line
+                continue
+            if start_line == end_line:
+                intervals.append(f'{start_line}!{tap}')
+            else:
+                intervals.append(f'{start_line}!{tap}:{end_line}!{tap}')
+            start_line = line
+            end_line = line
+        if start_line == end_line:
+            intervals.append(f'{start_line}!{tap}')
+        else:
+            intervals.append(f'{start_line}!{tap}:{end_line}!{tap}')
+    return '(@' + ','.join(intervals) + ')'
+
+
+def expand_channel_list(channel_list: str) -> str:
+    return state_to_expanded_list(channel_list_to_state(channel_list))
+
+
+def compress_channel_list(channel_list: str) -> str:
+    return state_to_compressed_list(channel_list_to_state(channel_list))
+
+
+relay_lines = 24
+relays_per_line = 9
+
+
+def _state_diff(before: State, after: State) -> Tuple[State, State, State]:
+    initial = frozenset(before)
+    target = frozenset(after)
+    return list(target - initial), list(initial - target), list(target)
 
 
 class QSwitchChannel(InstrumentChannel):
@@ -70,19 +124,6 @@ class QSwitchChannel(InstrumentChannel):
     def __init__(self, parent: 'QSwitch', name: str, channum: int):
         super().__init__(parent, name)
         self._channum = channum
-        self.add_function(
-            name='on',
-            call_cmd=f'clos (@{channum}!9)'
-        )
-        self.add_function(
-            name='off',
-            call_cmd=f'open (@{channum}!9)'
-        )
-        # self.add_parameter(
-        #     name='off',
-        #     label='off',
-        #     call_cmd=f'clos (@{channum}!9)'
-        # )
 
 
 class QSwitch(VisaInstrument):
@@ -104,6 +145,8 @@ class QSwitch(VisaInstrument):
         self._check_for_wrong_model()
         self._check_for_incompatiable_firmware()
         self._set_up_channels()
+        self._state : List[Tuple[int, int]] = []
+        self.state_force_update()
 
     # -----------------------------------------------------------------------
     # Instrument-wide functions
@@ -129,9 +172,15 @@ class QSwitch(VisaInstrument):
         """
         return self.ask('next?')
 
-    @staticmethod
-    def unpack(channel_list: str) -> str:
-        return map_to_channel_list(channel_list_to_map(channel_list))
+    def state_force_update(self) -> str:
+        self._set_state_raw(channel_list_to_state(self.ask('stat?')))
+        return self.state()
+
+    def state(self) -> str:
+        return state_to_compressed_list(self._state)
+
+    def set_state(self, state: State) -> None:
+        self._effectuate(state)
 
     # -----------------------------------------------------------------------
     # Debugging and testing
@@ -154,10 +203,10 @@ class QSwitch(VisaInstrument):
         self._scpi_sent = list()
         return commands
 
-    def clear(self) -> None:
-        """Reset the VISA message queue of the instrument
-        """
-        self.visa_handle.clear()
+    # def clear(self) -> None:
+    #     """Reset the VISA message queue of the instrument
+    #     """
+    #     self.visa_handle.clear()
 
     def clear_read_queue(self) -> Sequence[str]:
         """Flush the VISA message queue of the instrument
@@ -179,9 +228,6 @@ class QSwitch(VisaInstrument):
                 lingering.append(message)
         self.visa_handle.timeout = original_timeout
         return lingering
-
-    def state(self) -> str:
-        return self.ask('stat?')
 
     # -----------------------------------------------------------------------
     # Override communication methods to make it possible to record the
@@ -213,6 +259,18 @@ class QSwitch(VisaInstrument):
 
     # -----------------------------------------------------------------------
 
+    def _set_state_raw(self, state: State) -> None:
+        self._state = list(state)
+        self._state.sort()
+
+    def _effectuate(self, state: State) -> None:
+        positive, negative, total = _state_diff(self._state, state)
+        if positive:
+            self.write(f'clos {state_to_compressed_list(positive)}')
+        if negative:
+            self.write(f'open {state_to_compressed_list(negative)}')
+        self._set_state_raw(total)
+
     def _set_up_debug_settings(self) -> None:
         self._record_commands = False
         self._scpi_sent = list()
@@ -237,6 +295,7 @@ class QSwitch(VisaInstrument):
                              f'least {least_compatible_fw}')
 
     def _set_up_channels(self) -> None:
+        pass
         channels = ChannelList(self, 'Lines', QSwitchChannel)
         for i in range(1, 24 + 1):
             name = f'line{i:02}'

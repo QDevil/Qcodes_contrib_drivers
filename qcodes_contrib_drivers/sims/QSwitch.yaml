@@ -28,9 +28,15 @@ devices:
         can_select: True
         dialogues:
           - q: "clos (@{ch_id}!0)"
+          - q: "clos (@{ch_id}!1)"
+          - q: "clos (@{ch_id}!8)"
           - q: "clos (@{ch_id}!9)"
           - q: "open (@{ch_id}!0)"
+          - q: "open (@{ch_id}!2)"
+          - q: "open (@{ch_id}!7)"
           - q: "open (@{ch_id}!9)"
+          - q: "clos (@20!6,22!7,24!8,1!9)"
+          - q: "open (@1!0,3!0:24!0)"
 
   wrong_model:
     eom:
