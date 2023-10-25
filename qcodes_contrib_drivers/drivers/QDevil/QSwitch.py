@@ -4,6 +4,7 @@ from time import sleep as sleep_s
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes.instrument.visa import VisaInstrument
+from qcodes.utils import validators
 from pyvisa.errors import VisaIOError
 from typing import Tuple, Sequence, List, Dict, Set
 from packaging.version import parse
@@ -152,6 +153,15 @@ class QSwitch(VisaInstrument):
             parameter_class=DelegateParameter,
             snapshot_exclude=True,
         )
+        self.add_parameter(
+            name='error_indicator',
+            set_cmd='beep:stat {0}'.format('{}'),
+            get_cmd='beep:stat?',
+            get_parser=str,
+            vals=validators.Enum('on', 'off'),
+            snapshot_exclude=True,
+        )
+            
 
     def _set_relays(self, state: State) -> None:
         self._effectuate(state)

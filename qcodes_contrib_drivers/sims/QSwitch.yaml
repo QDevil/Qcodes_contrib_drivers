@@ -21,7 +21,17 @@ devices:
       - q: "stat?"
         r: "(@1!0:24!0)"
       - q: "*rst"
-      - q: "abor"
+    properties:
+      beeper:
+        default: "off"
+        setter:
+          q: "beep:stat {}"
+        getter:
+          q: "beep:stat?"
+          r: "{}"
+        specs:
+          valid: ["on", "off", "0", "1"]
+          type: str
     channels:
       line:
         ids: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]

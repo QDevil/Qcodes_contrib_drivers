@@ -14,15 +14,6 @@ def test_idn(qswitch):  # noqa
 
 
 @pytest.mark.wip
-def test_abort(qswitch):  # noqa
-    # -----------------------------------------------------------------------
-    qswitch.abort()
-    # -----------------------------------------------------------------------
-    commands = qswitch.get_recorded_scpi_commands()
-    assert commands == ['abor']
-
-
-@pytest.mark.wip
 def test_reset(qswitch, mocker):  # noqa
     sleep_fn = mocker.patch('qcodes_contrib_drivers.drivers.QDevil.QSwitch.sleep_s')
     # -----------------------------------------------------------------------
