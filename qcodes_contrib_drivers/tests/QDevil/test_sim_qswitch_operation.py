@@ -102,3 +102,65 @@ def test_individual_relay_can_be_opened(qswitch):  # noqa
     # -----------------------------------------------------------------------
     commands = qswitch.get_recorded_scpi_commands()
     assert commands == ['open (@14!0)']
+
+
+@pytest.mark.wip
+def test_beeper_can_be_turned_on(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.error_indicator('on')
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['beep:stat on']
+
+
+@pytest.mark.wip
+def test_beeper_can_be_turned_off(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.error_indicator('off')
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['beep:stat off']
+
+
+@pytest.mark.wip
+def test_beeper_state_can_be_queried(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    state = qswitch.error_indicator()
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['beep:stat?']
+    assert state == 'off'
+
+
+@pytest.mark.wip
+def test_autosave_can_be_turned_on(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    state = qswitch.auto_save('on')
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['aut on']
+
+
+@pytest.mark.wip
+def test_autosave_can_be_turned_off(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    state = qswitch.auto_save('off')
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['aut off']
+
+
+@pytest.mark.wip
+def test_autosave_state_can_be_queried(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    state = qswitch.auto_save()
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['aut?']
+    assert state == 'off'

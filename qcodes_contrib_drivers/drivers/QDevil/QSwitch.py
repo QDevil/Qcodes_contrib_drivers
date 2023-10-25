@@ -154,6 +154,14 @@ class QSwitch(VisaInstrument):
             snapshot_exclude=True,
         )
         self.add_parameter(
+            name='auto_save',
+            set_cmd='aut {0}'.format('{}'),
+            get_cmd='aut?',
+            get_parser=str,
+            vals=validators.Enum('on', 'off'),
+            snapshot_exclude=True,
+        )
+        self.add_parameter(
             name='error_indicator',
             set_cmd='beep:stat {0}'.format('{}'),
             get_cmd='beep:stat?',
