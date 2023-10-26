@@ -248,3 +248,24 @@ def test_disconnect_by_numbers(qswitch):  # noqa
     # -----------------------------------------------------------------------
     commands = qswitch.get_recorded_scpi_commands()
     assert commands == ['open (@14!9:15!9)']
+
+
+@pytest.mark.wip
+def test_break_out_by_number(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.break_out(22, 7)
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['clos (@22!7)']
+
+
+@pytest.mark.wip
+def test_unbreak_out_by_number(qswitch):  # noqa
+    qswitch.break_out(22, 7)
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.unbreak_out(22, 7)
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['open (@22!7)']

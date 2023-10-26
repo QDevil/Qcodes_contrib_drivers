@@ -177,6 +177,7 @@ class QSwitch(VisaInstrument):
     def reset(self) -> None:
         self.write('*rst')
         sleep_s(1)
+        self.state_force_update()
 
     def errors(self) -> str:
         """Retrieve and clear all previous errors
@@ -240,6 +241,12 @@ class QSwitch(VisaInstrument):
         else:
             pairs = list(itertools.zip_longest(lines, [], fillvalue=9))
             self.open_relays(pairs)
+
+    def break_out(self, line: int, tap: int) -> None:
+        self.close_relay(line, tap)
+
+    def unbreak_out(self, line: int, tap: int) -> None:
+        self.open_relay(line, tap)
 
     # -----------------------------------------------------------------------
     # Debugging and testing
