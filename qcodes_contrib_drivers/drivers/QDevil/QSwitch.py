@@ -6,7 +6,7 @@ from qcodes.instrument.parameter import DelegateParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators
 from pyvisa.errors import VisaIOError
-from typing import Tuple, Sequence, List, Dict, Set
+from typing import Tuple, Sequence, List, Dict, Set, Union
 from packaging.version import parse
 
 # Version 0.1.0
@@ -169,10 +169,6 @@ class QSwitch(VisaInstrument):
             vals=validators.Enum('on', 'off'),
             snapshot_exclude=True,
         )
-            
-
-    def _set_relays(self, state: State) -> None:
-        self._effectuate(state)
 
     # -----------------------------------------------------------------------
     # Instrument-wide functions
@@ -216,6 +212,20 @@ class QSwitch(VisaInstrument):
 
     def open_relay(self, line: int, tap: int) -> None:
         self.open_relays([(line, tap)])
+
+    def unground(self, lines: Union[int, Sequence[int]]) -> None:
+        if isinstance(lines, int):
+            self.open_relay(lines, 0)
+        else:
+            pairs = list(itertools.zip_longest(lines, [], fillvalue=0))
+            self.open_relays(pairs)
+
+    def ground(self, lines: Union[int, Sequence[int]]) -> None:
+        if isinstance(lines, int):
+            self.close_relay(lines, 0)
+        else:
+            pairs = list(itertools.zip_longest(lines, [], fillvalue=0))
+            self.close_relays(pairs)
 
     # -----------------------------------------------------------------------
     # Debugging and testing

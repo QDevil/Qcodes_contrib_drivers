@@ -164,3 +164,46 @@ def test_autosave_state_can_be_queried(qswitch):  # noqa
     commands = qswitch.get_recorded_scpi_commands()
     assert commands == ['aut?']
     assert state == 'off'
+
+
+@pytest.mark.wip
+def test_unground_by_number(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.unground(15)
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['open (@15!0)']
+
+
+@pytest.mark.wip
+def test_ground_by_number(qswitch):  # noqa
+    qswitch.unground(15)
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.ground(15)
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['clos (@15!0)']
+
+
+@pytest.mark.wip
+def test_unground_by_numbers(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.unground([15, 14])
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['open (@14!0:15!0)']
+
+
+@pytest.mark.wip
+def test_ground_by_numbers(qswitch):  # noqa
+    qswitch.unground([15, 14])
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.ground([15, 14])
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['clos (@14!0:15!0)']
+

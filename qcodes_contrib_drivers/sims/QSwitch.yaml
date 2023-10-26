@@ -60,6 +60,8 @@ devices:
           - q: "clos (@22!7)"
           - q: "open (@1!0,3!0:24!0)"
           - q: "open (@14!0,22!0)"
+          - q: "open (@14!0:15!0)"
+          - q: "clos (@14!0:15!0)"
 
   wrong_model:
     eom:
