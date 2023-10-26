@@ -227,6 +227,20 @@ class QSwitch(VisaInstrument):
             pairs = list(itertools.zip_longest(lines, [], fillvalue=0))
             self.close_relays(pairs)
 
+    def connect(self, lines: Union[int, Sequence[int]]) -> None:
+        if isinstance(lines, int):
+            self.close_relay(lines, 9)
+        else:
+            pairs = list(itertools.zip_longest(lines, [], fillvalue=9))
+            self.close_relays(pairs)
+
+    def disconnect(self, lines: Union[int, Sequence[int]]) -> None:
+        if isinstance(lines, int):
+            self.open_relay(lines, 9)
+        else:
+            pairs = list(itertools.zip_longest(lines, [], fillvalue=9))
+            self.open_relays(pairs)
+
     # -----------------------------------------------------------------------
     # Debugging and testing
 

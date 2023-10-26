@@ -207,3 +207,44 @@ def test_ground_by_numbers(qswitch):  # noqa
     commands = qswitch.get_recorded_scpi_commands()
     assert commands == ['clos (@14!0:15!0)']
 
+
+@pytest.mark.wip
+def test_connect_by_number(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.connect(15)
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['clos (@15!9)']
+
+
+@pytest.mark.wip
+def test_disconnect_by_number(qswitch):  # noqa
+    qswitch.connect(15)
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.disconnect(15)
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['open (@15!9)']
+
+
+@pytest.mark.wip
+def test_connect_by_numbers(qswitch):  # noqa
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.connect([15, 14])
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['clos (@14!9:15!9)']
+
+
+@pytest.mark.wip
+def test_disconnect_by_numbers(qswitch):  # noqa
+    qswitch.connect([15, 14])
+    qswitch.start_recording_scpi()
+    # -----------------------------------------------------------------------
+    qswitch.disconnect([15, 14])
+    # -----------------------------------------------------------------------
+    commands = qswitch.get_recorded_scpi_commands()
+    assert commands == ['open (@14!9:15!9)']
