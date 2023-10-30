@@ -20,5 +20,5 @@ def test_reset(qswitch, mocker):  # noqa
     qswitch.reset()
     # -----------------------------------------------------------------------
     commands = qswitch.get_recorded_scpi_commands()
-    assert commands == ['*rst']
-    sleep_fn.assert_called_once_with(1)
+    assert commands == ['*rst', 'stat?']
+    sleep_fn.assert_called_once_with(0.1)

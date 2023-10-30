@@ -6,7 +6,8 @@ from qcodes.instrument.parameter import DelegateParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators
 from pyvisa.errors import VisaIOError
-from typing import Tuple, Sequence, List, Dict, Set, Union
+from typing import (
+    TypeAlias, Tuple, Sequence, List, Dict, Set, Union, Optional)
 from packaging.version import parse
 
 # Version 0.1.0
@@ -138,6 +139,7 @@ class QSwitch(VisaInstrument):
         self.connect_message()
         self._check_for_wrong_model()
         self._check_for_incompatiable_firmware()
+        self._set_default_names()
         self.state_force_update()
         self.add_parameter(
             name='state',
@@ -151,7 +153,7 @@ class QSwitch(VisaInstrument):
             set_parser=state_to_compressed_list,
             get_parser=channel_list_to_state,
             parameter_class=DelegateParameter,
-            snapshot_exclude=True,
+            snapshot_value=False,
         )
         self.add_parameter(
             name='auto_save',
@@ -159,7 +161,7 @@ class QSwitch(VisaInstrument):
             get_cmd='aut?',
             get_parser=str,
             vals=validators.Enum('on', 'off'),
-            snapshot_exclude=True,
+            snapshot_value=False,
         )
         self.add_parameter(
             name='error_indicator',
@@ -167,7 +169,7 @@ class QSwitch(VisaInstrument):
             get_cmd='beep:stat?',
             get_parser=str,
             vals=validators.Enum('on', 'off'),
-            snapshot_exclude=True,
+            snapshot_value=False,
         )
 
     # -----------------------------------------------------------------------
@@ -176,7 +178,7 @@ class QSwitch(VisaInstrument):
 
     def reset(self) -> None:
         self.write('*rst')
-        sleep_s(1)
+        sleep_s(0.1)
         self.state_force_update()
 
     def errors(self) -> str:
@@ -198,6 +200,10 @@ class QSwitch(VisaInstrument):
     def state_force_update(self) -> None:
         self._set_state_raw(self.ask('stat?'))
 
+    # -----------------------------------------------------------------------
+    # Direct manipulation of the relays
+    # -----------------------------------------------------------------------
+
     def close_relays(self, relays: State) -> None:
         currently = channel_list_to_state(self._get_state())
         union = list(itertools.chain(currently, relays))
@@ -214,39 +220,64 @@ class QSwitch(VisaInstrument):
     def open_relay(self, line: int, tap: int) -> None:
         self.open_relays([(line, tap)])
 
-    def unground(self, lines: Union[int, Sequence[int]]) -> None:
-        if isinstance(lines, int):
-            self.open_relay(lines, 0)
+    # -----------------------------------------------------------------------
+    # Manipulation by name
+    # -----------------------------------------------------------------------
+
+    OneOrMore: TypeAlias = Union[str, Sequence[str]]
+
+    def unground(self, lines: OneOrMore) -> None:
+        if isinstance(lines, str):
+            self.open_relay(self._to_line(lines), 0)
         else:
-            pairs = list(itertools.zip_longest(lines, [], fillvalue=0))
+            numbers = map(self._to_line, lines)
+            pairs = list(itertools.zip_longest(numbers, [], fillvalue=0))
             self.open_relays(pairs)
 
-    def ground(self, lines: Union[int, Sequence[int]]) -> None:
-        if isinstance(lines, int):
-            self.close_relay(lines, 0)
+    def ground(self, lines: OneOrMore) -> None:
+        if isinstance(lines, str):
+            self.close_relay(self._to_line(lines), 0)
         else:
-            pairs = list(itertools.zip_longest(lines, [], fillvalue=0))
+            numbers = map(self._to_line, lines)
+            pairs = list(itertools.zip_longest(numbers, [], fillvalue=0))
             self.close_relays(pairs)
 
-    def connect(self, lines: Union[int, Sequence[int]]) -> None:
-        if isinstance(lines, int):
-            self.close_relay(lines, 9)
+    def connect(self, lines: OneOrMore) -> None:
+        if isinstance(lines, str):
+            self.close_relay(self._to_line(lines), 9)
         else:
-            pairs = list(itertools.zip_longest(lines, [], fillvalue=9))
+            numbers = map(self._to_line, lines)
+            pairs = list(itertools.zip_longest(numbers, [], fillvalue=9))
             self.close_relays(pairs)
 
-    def disconnect(self, lines: Union[int, Sequence[int]]) -> None:
-        if isinstance(lines, int):
-            self.open_relay(lines, 9)
+    def disconnect(self, lines: OneOrMore) -> None:
+        if isinstance(lines, str):
+            self.open_relay(self._to_line(lines), 9)
         else:
-            pairs = list(itertools.zip_longest(lines, [], fillvalue=9))
+            numbers = map(self._to_line, lines)
+            pairs = list(itertools.zip_longest(numbers, [], fillvalue=9))
             self.open_relays(pairs)
 
-    def break_out(self, line: int, tap: int) -> None:
-        self.close_relay(line, tap)
+    def break_out(self, line: str, tap: str) -> None:
+        self.close_relay(self._to_line(line), self._to_tap(tap))
 
-    def unbreak_out(self, line: int, tap: int) -> None:
-        self.open_relay(line, tap)
+    def unbreak_out(self, line: str, tap: str) -> None:
+        self.open_relay(self._to_line(line), self._to_tap(tap))
+
+    def arrange(self, breakouts: Optional[Dict[str, int]] = None,
+                lines: Optional[Dict[str, int]] = None) -> None:
+        """An arrangement of names for lines and breakouts
+
+        Args:
+            breakouts (Dict[str, int]): Name/breakout pairs
+            lines (Dict[str, int]): Name/line pairs
+        """
+        if lines:
+            for name, line in lines.items():
+                self._line_names[name] = line
+        if breakouts:
+            for name, tap in breakouts.items():
+                self._tap_names[name] = tap
 
     # -----------------------------------------------------------------------
     # Debugging and testing
@@ -320,6 +351,18 @@ class QSwitch(VisaInstrument):
 
     # -----------------------------------------------------------------------
 
+    def _to_line(self, name: str) -> int:
+        try:
+            return self._line_names[name]
+        except KeyError:
+            raise ValueError(f'Unknown line "{name}"')
+
+    def _to_tap(self, name: str) -> int:
+        try:
+            return self._tap_names[name]
+        except KeyError:
+            raise ValueError(f'Unknown tap "{name}"')
+
     def _get_state(self) -> str:
         return self._state
 
@@ -363,6 +406,12 @@ class QSwitch(VisaInstrument):
 
     def _set_up_simple_functions(self) -> None:
         self.add_function('abort', call_cmd='abor')
+
+    def _set_default_names(self) -> None:
+        lines = range(1, relay_lines+1)
+        taps = range(1, relays_per_line)
+        self._line_names = dict(zip(map(str, lines), lines))
+        self._tap_names = dict(zip(map(str, taps), taps))
 
     def _check_instrument_name(self, name: str) -> None:
         if name.isidentifier():
