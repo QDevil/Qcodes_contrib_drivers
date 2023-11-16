@@ -9,7 +9,7 @@ from typing import (
     Tuple, Sequence, List, Dict, Set, Union, Optional)
 from packaging.version import parse
 
-# Version 0.3.0
+# Version 0.4.0
 
 State = Sequence[Tuple[int, int]]
 
