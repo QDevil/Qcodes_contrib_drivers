@@ -14,7 +14,7 @@ def test_initial_state_is_recorded_in_snapshot(qswitch):  # noqa
 @pytest.mark.wip
 def test_state_change_is_recorded_in_snapshot(qswitch):  # noqa
     # -----------------------------------------------------------------------
-    qswitch.all_closed_relays([(24,8), (22,7), (20,6), (1,9), (2,0)])
+    qswitch.closed_relays([(24,8), (22,7), (20,6), (1,9), (2,0)])
     snapshot = qswitch.snapshot()
     # -----------------------------------------------------------------------
     relays = snapshot['parameters']['state']['value']

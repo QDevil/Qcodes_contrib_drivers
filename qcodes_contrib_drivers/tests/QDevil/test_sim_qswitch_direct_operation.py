@@ -26,7 +26,7 @@ def test_get_state(qswitch):  # noqa
 def test_set_state_changes_the_state(qswitch, mocker):  # noqa
     mocker.patch.object(qswitch, 'state_force_update')
     # -----------------------------------------------------------------------
-    qswitch.all_closed_relays(
+    qswitch.closed_relays(
         [(24, 8), (24, 8), (22, 7), (20, 6), (1, 9), (2, 0)])
     # -----------------------------------------------------------------------
     assert qswitch.state() == '(@2!0,20!6,22!7,24!8,1!9)'
@@ -35,7 +35,7 @@ def test_set_state_changes_the_state(qswitch, mocker):  # noqa
 @pytest.mark.wip
 def test_set_state_only_sends_diff(qswitch):  # noqa
     # -----------------------------------------------------------------------
-    qswitch.all_closed_relays(
+    qswitch.closed_relays(
         [(24, 8), (24, 8), (22, 7), (20, 6), (1, 9), (2, 0)])
     # -----------------------------------------------------------------------
     commands = qswitch.get_recorded_scpi_commands()
@@ -47,11 +47,11 @@ def test_set_state_only_sends_diff(qswitch):  # noqa
 
 @pytest.mark.wip
 def test_set_state_ignores_empty_diff(qswitch):  # noqa
-    qswitch.all_closed_relays(
+    qswitch.closed_relays(
         [(24, 8), (24, 8), (22, 7), (20, 6), (1, 9), (2, 0)])
     qswitch.start_recording_scpi()
     # -----------------------------------------------------------------------
-    qswitch.all_closed_relays([(24, 8), (22, 7), (20, 6), (1, 9), (2, 0)])
+    qswitch.closed_relays([(24, 8), (22, 7), (20, 6), (1, 9), (2, 0)])
     # -----------------------------------------------------------------------
     commands = qswitch.get_recorded_scpi_commands()
     assert commands == []
@@ -61,11 +61,11 @@ def test_set_state_ignores_empty_diff(qswitch):  # noqa
 def test_states_are_sanitised(qswitch, mocker):  # noqa
     mocker.patch.object(qswitch, 'state_force_update')
     # -----------------------------------------------------------------------
-    qswitch.all_closed_relays(
+    qswitch.closed_relays(
         [(24, 8), (22, 7), (20, 6), (1, 9), (2, 0), (24, 8), (20, 6)])
     # -----------------------------------------------------------------------
     assert_items_equal(
-        qswitch.all_closed_relays(),
+        qswitch.closed_relays(),
         [(1, 9), (2, 0), (20, 6), (22, 7), (24, 8)]
     )
 
@@ -137,7 +137,7 @@ def test_beeper_state_can_be_queried(qswitch):  # noqa
 @pytest.mark.wip
 def test_autosave_can_be_turned_on(qswitch):  # noqa
     # -----------------------------------------------------------------------
-    state = qswitch.auto_save('on')
+    qswitch.auto_save('on')
     # -----------------------------------------------------------------------
     commands = qswitch.get_recorded_scpi_commands()
     assert commands == ['aut on']
@@ -146,7 +146,7 @@ def test_autosave_can_be_turned_on(qswitch):  # noqa
 @pytest.mark.wip
 def test_autosave_can_be_turned_off(qswitch):  # noqa
     # -----------------------------------------------------------------------
-    state = qswitch.auto_save('off')
+    qswitch.auto_save('off')
     # -----------------------------------------------------------------------
     commands = qswitch.get_recorded_scpi_commands()
     assert commands == ['aut off']
