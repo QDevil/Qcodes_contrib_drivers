@@ -11,6 +11,8 @@ on:
     tags:
       - 'v*'
   pull_request:
+  merge_group:
+    branches: ['main']
 
 jobs:
   builddocs:
@@ -50,7 +52,7 @@ jobs:
         args: install pandoc
       if: runner.os == 'Windows'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4.7.1
+      uses: actions/setup-python@v5.0.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -80,7 +82,7 @@ jobs:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@v4.4.3
+      uses: JamesIves/github-pages-deploy-action@v4.5.0
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/docs/_build/html
